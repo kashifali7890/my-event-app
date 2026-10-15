@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CalendarPlus, Loader2 } from "lucide-react";
+export const dynamic = "force-dynamic";
 
 export default function CreateEventPage() {
   const router = useRouter();
