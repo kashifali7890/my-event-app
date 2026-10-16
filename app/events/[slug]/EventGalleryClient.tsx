@@ -26,11 +26,11 @@ export default function EventGalleryClient({
   const [isDownloading, setIsDownloading] = useState(false);
   const supabase = createClient();
 
-  // 🌟 MAGIC FIX: Use production URL if available, otherwise fallback to local
+  // Use production URL if available, otherwise fallback to local
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
 
-  // 1. REAL-TIME SUBSCRIPTION: Listens for new uploads or deletions
+  // 1. REAL-TIME SUBSCRIPTION
   useEffect(() => {
     const channel = supabase
       .channel(`event-gallery-${event.id}`)
@@ -67,7 +67,6 @@ export default function EventGalleryClient({
   const handleDelete = async (photoId: string) => {
     if (!confirm("Are you sure you want to delete this photo?")) return;
 
-    // OPTIMISTIC UI: Remove it from the screen IMMEDIATELY
     setGalleryPhotos((prev) => prev.filter((p: any) => p.id !== photoId));
 
     try {
@@ -75,7 +74,6 @@ export default function EventGalleryClient({
         .from("photos")
         .delete()
         .eq("id", photoId);
-
       if (error) throw error;
     } catch (err: any) {
       console.error("Delete error:", err);
@@ -204,6 +202,20 @@ export default function EventGalleryClient({
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="text-white text-sm font-medium">
-                    
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-white text-xs font-medium">
+                      {photo.guest_name || "Anonymous Guest"}
+                    </p>
+                    <p className="text-gray-300 text-[10px]">
+                      {new Date(photo.created_at).toLocaleDateString()}
+                    </p>
                   </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
