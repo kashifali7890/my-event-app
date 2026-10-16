@@ -29,8 +29,6 @@ export default function GuestUploadPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [widgetReady, setWidgetReady] = useState(false);
-
-  // --- CHANGE 1: Added state for guest name ---
   const [guestName, setGuestName] = useState("");
 
   useEffect(() => {
@@ -70,7 +68,6 @@ export default function GuestUploadPage() {
     setError("");
 
     try {
-      // Get signature from our backend
       const signatureRes = await fetch("/api/upload-signature");
       const signatureData = await signatureRes.json();
 
@@ -85,18 +82,18 @@ export default function GuestUploadPage() {
           apiKey: signatureData.apiKey,
           signature: signatureData.signature,
           timestamp: signatureData.timestamp,
-          sources: ["local"],
+          sources: ["local", "camera"], // 🚀 Better mobile experience
           maxFiles: 5,
           multiple: true,
-          clientAllowedFormats: ["jpg", "jpeg", "png", "gif"],
-          maxFileSize: 10000000,
+          clientAllowedFormats: ["jpg", "jpeg", "png", "webp"], // 🚀 WebP is faster
+          maxFileSize: 5000000, // 🚀 Reduced to 5MB to prevent huge files
+          maxImageWidth: 1920, // 🚀 MAGIC: Resizes on phone BEFORE uploading!
+          maxImageHeight: 1920, // 🚀 MAGIC: Resizes on phone BEFORE uploading!
           cropping: false,
           theme: "minimal",
+          resourceType: "image",
         },
         async (error: any, result: any) => {
-          console.log("Cloudinary Widget Result:", result);
-          console.log("Cloudinary Widget Error:", error);
-
           if (error) {
             const errorMsg = error.message || JSON.stringify(error);
             console.error("Upload failed with error:", errorMsg);
@@ -106,9 +103,6 @@ export default function GuestUploadPage() {
           }
 
           if (result && result.event === "success") {
-            console.log("✅ Successfully uploaded:", result.info?.secure_url);
-
-            // --- CHANGE 2: Use the guestName state here instead of hardcoded "Anonymous Guest" ---
             const { error: dbError } = await supabase.from("photos").insert({
               event_id: eventId,
               image_url: result.info?.secure_url,
@@ -122,7 +116,6 @@ export default function GuestUploadPage() {
           }
 
           if (result && result.event === "close") {
-            console.log("Widget closed");
             setUploading(false);
             if (!error) {
               setSuccess(true);
@@ -196,7 +189,6 @@ export default function GuestUploadPage() {
         )}
 
         <div className="space-y-4">
-          {/* --- CHANGE 3: Added the Guest Name input field right above the button --- */}
           <input
             type="text"
             value={guestName}
