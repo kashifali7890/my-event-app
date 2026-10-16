@@ -83,7 +83,8 @@ export default function HomePage() {
               <button
                 onClick={async () => {
                   await supabase.auth.signOut();
-                  window.location.href = "/login";
+                  // .replace() forces a hard reload and prevents the user from clicking "Back" to a logged-in state
+                  window.location.replace("/login");
                 }}
                 className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium bg-transparent border-none cursor-pointer p-0"
               >
