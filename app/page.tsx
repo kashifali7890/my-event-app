@@ -82,9 +82,19 @@ export default function HomePage() {
               {/* 👇 UPDATED: Client-side Logout Button */}
               <button
                 onClick={async () => {
-                  await supabase.auth.signOut();
-                  // .replace() forces a hard reload and prevents the user from clicking "Back" to a logged-in state
-                  window.location.replace("/login");
+                  try {
+                    await supabase.auth.signOut();
+                    // Use absolute URL to prevent any redirect issues
+                    const currentOrigin =
+                      typeof window !== "undefined"
+                        ? window.location.origin
+                        : "";
+                    window.location.href = currentOrigin + "/login";
+                  } catch (error) {
+                    console.error("Logout failed:", error);
+                    // Fallback: just go to login
+                    window.location.href = "/login";
+                  }
                 }}
                 className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium bg-transparent border-none cursor-pointer p-0"
               >
