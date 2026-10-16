@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client"; // ⚠️ Adjust path if your client is elsewhere (e.g., '@/utils/supabase/client')
+import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Download, Trash2, Camera, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import JSZip from "jszip";
@@ -26,6 +25,10 @@ export default function EventGalleryClient({
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
   const supabase = createClient();
+
+  // 🌟 MAGIC FIX: Use production URL if available, otherwise fallback to local
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+  const uploadUrl = `${appUrl}/events/${slug}/upload`;
 
   // 1. REAL-TIME SUBSCRIPTION: Listens for new uploads or deletions
   useEffect(() => {
@@ -61,29 +64,22 @@ export default function EventGalleryClient({
   }, [event.id, supabase]);
 
   // 2. DELETE HANDLER
-  // 2. DELETE HANDLER
   const handleDelete = async (photoId: string) => {
     if (!confirm("Are you sure you want to delete this photo?")) return;
 
-    // 1. OPTIMISTIC UI: Remove it from the screen IMMEDIATELY
+    // OPTIMISTIC UI: Remove it from the screen IMMEDIATELY
     setGalleryPhotos((prev) => prev.filter((p: any) => p.id !== photoId));
 
     try {
-      // 2. Delete from Database
       const { error } = await supabase
         .from("photos")
         .delete()
         .eq("id", photoId);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
     } catch (err: any) {
       console.error("Delete error:", err);
       alert("Failed to delete photo. Error: " + err.message);
-
-      // If it fails, you could add code here to put the photo back,
-      // but for now, this alert will tell us exactly what's wrong.
     }
   };
 
@@ -116,8 +112,6 @@ export default function EventGalleryClient({
       setIsDownloading(false);
     }
   };
-
-  const uploadUrl = `https://pamperer-paragraph-vocalist.ngrok-free.dev/events/${slug}/upload`;
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-600">
@@ -210,20 +204,6 @@ export default function EventGalleryClient({
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
-                    <p className="text-white text-xs font-medium">
-                      {photo.guest_name || "Anonymous Guest"}
-                    </p>
-                    <p className="text-gray-300 text-[10px]">
-                      {new Date(photo.created_at).toLocaleDateString()}
-                    </p>
+                  <div className="text-white text-sm font-medium">
+                    
                   </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}

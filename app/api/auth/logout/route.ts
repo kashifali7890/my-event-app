@@ -7,6 +7,7 @@ export async function GET() {
   // Sign out the user
   await supabase.auth.signOut();
   
-  // Redirect back to the login page
-  return NextResponse.redirect(new URL("/login", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"));
+  // Redirect back to the login page using the production URL if available
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  return NextResponse.redirect(new URL("/login", baseUrl));
 }
