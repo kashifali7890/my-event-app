@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation"; // 👈 Added Router
+import { useRouter } from "next/navigation";
 import { Camera, Plus, Calendar, LogIn, Loader2, Trash2 } from "lucide-react";
 
 export default function HomePage() {
@@ -11,7 +11,7 @@ export default function HomePage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
-  const router = useRouter(); // 👈 Added Router instance
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -78,12 +78,18 @@ export default function HomePage() {
               <span className="text-sm text-gray-600 font-medium">
                 Hi, {user.user_metadata?.full_name || user.email.split("@")[0]}!
               </span>
-              <Link
-                href="/api/auth/logout"
-                className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium"
+
+              {/* 👇 UPDATED: Client-side Logout Button */}
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = "/login";
+                }}
+                className="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-medium bg-transparent border-none cursor-pointer p-0"
               >
                 <LogIn className="w-4 h-4 rotate-180" /> Logout
-              </Link>
+              </button>
+              {/* 👆 END UPDATE */}
             </div>
           ) : (
             <Link
@@ -134,7 +140,6 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {events.length > 0 ? (
                 events.map((event) => (
-                  // 👇 CHANGED: From <Link> to a <div> with onClick
                   <div
                     key={event.id}
                     onClick={() => router.push(`/events/${event.slug}`)}
