@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Download, Trash2, Camera, QrCode } from "lucide-react";
+import { ArrowLeft, Download, Trash2, Camera, QrCode, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import JSZip from "jszip";
 
@@ -113,12 +113,23 @@ export default function EventGalleryClient({
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-          >
-            <ArrowLeft className="w-5 h-5" /> Back to Home
-          </Link>
+          {/* HOST: Back to Home link */}
+          {isHost ? (
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
+            >
+              <ArrowLeft className="w-5 h-5" /> Back to Home
+            </Link>
+          ) : (
+            /* GUEST: Close button that closes the tab */
+            <button
+              onClick={() => window.close()}
+              className="flex items-center gap-2 text-gray-700 hover:text-red-600 font-medium transition"
+            >
+              <X className="w-5 h-5" /> Close
+            </button>
+          )}
 
           {/* ONLY HOST: Download Button */}
           {isHost && (
@@ -182,6 +193,15 @@ export default function EventGalleryClient({
                 ? "Share the QR code to get started!"
                 : "Be the first to upload a photo!"}
             </p>
+            {/* GUEST: Add upload button for guests */}
+            {!isHost && (
+              <Link
+                href={`/events/${slug}/upload`}
+                className="inline-block mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Upload Photos
+              </Link>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -225,6 +245,18 @@ export default function EventGalleryClient({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* GUEST: Upload more photos button at the bottom */}
+        {!isHost && galleryPhotos.length > 0 && (
+          <div className="text-center mt-8">
+            <Link
+              href={`/events/${slug}/upload`}
+              className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              Upload More Photos
+            </Link>
           </div>
         )}
       </main>

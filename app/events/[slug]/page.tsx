@@ -43,14 +43,7 @@ export default async function EventGalleryPage({
     .order("created_at", { ascending: false });
 
   // 5. Check if the logged-in user is the owner of this event
-
-  // 5. Check if the logged-in user is the owner of this event
-  const isHost = true;
-
-  // ADD THIS DEBUG LINE:
-  console.log("🔍 DEBUG: Current User ID:", user?.id);
-  console.log("🔍 DEBUG: Event Owner ID:", event.user_id);
-  console.log("🔍 DEBUG: Is Host?", isHost);
+  const isHost = user?.id === event.user_id;
 
   // 6. Pass everything to the client component
   return (
