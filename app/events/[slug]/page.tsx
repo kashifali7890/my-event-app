@@ -44,6 +44,7 @@ export default async function EventGalleryPage({
 
   // 5. Check if the logged-in user is the owner of this event
   const isHost = user?.id === event.user_id;
+  const isLoggedIn = !!user;
 
   // 6. Pass everything to the client component
   return (
@@ -52,6 +53,7 @@ export default async function EventGalleryPage({
       photos={photos || []}
       slug={slug}
       isHost={isHost}
+      isLoggedIn={isLoggedIn}
     />
   );
 }

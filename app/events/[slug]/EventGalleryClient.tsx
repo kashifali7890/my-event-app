@@ -4,7 +4,14 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Download, Trash2, Camera, QrCode, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Trash2,
+  Camera,
+  QrCode,
+  LogIn,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import JSZip from "jszip";
 
@@ -18,11 +25,13 @@ export default function EventGalleryClient({
   photos,
   slug,
   isHost,
+  isLoggedIn,
 }: {
   event: any;
   photos: any[];
   slug: string;
   isHost: boolean;
+  isLoggedIn: boolean;
 }) {
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -122,13 +131,13 @@ export default function EventGalleryClient({
               <ArrowLeft className="w-5 h-5" /> Back to Home
             </Link>
           ) : (
-            /* GUEST: Close button that closes the tab */
-            <button
-              onClick={() => window.close()}
-              className="flex items-center gap-2 text-gray-700 hover:text-red-600 font-medium transition"
+            /* GUEST: Back to Home link (not close) */
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
             >
-              <X className="w-5 h-5" /> Close
-            </button>
+              <ArrowLeft className="w-5 h-5" /> Back to Home
+            </Link>
           )}
 
           {/* ONLY HOST: Download Button */}
@@ -158,6 +167,16 @@ export default function EventGalleryClient({
               ? "Manage, delete, and download photos for this event."
               : "View photos shared by guests."}
           </p>
+
+          {/* If logged in but not the host, show a message */}
+          {isLoggedIn && !isHost && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm">
+                You are logged in, but you are not the owner of this event. Only
+                the event creator can see the QR code and management tools.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* ONLY HOST: QR Code Section */}
