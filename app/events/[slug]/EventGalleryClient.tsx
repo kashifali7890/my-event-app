@@ -28,6 +28,9 @@ export default function EventGalleryClient({
   const [isDownloading, setIsDownloading] = useState(false);
   const supabase = createClient();
 
+  console.log("DEBUG: isHost =", isHost);
+  console.log("DEBUG: user ID =", user?.id); // Wait, we didn't pass user, we passed isHost. Let's check page.tsx
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
 
