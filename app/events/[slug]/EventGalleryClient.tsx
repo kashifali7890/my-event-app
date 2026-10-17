@@ -4,14 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Download,
-  Trash2,
-  Camera,
-  QrCode,
-  LogIn,
-} from "lucide-react";
+import { ArrowLeft, Download, Trash2, Camera, QrCode } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import JSZip from "jszip";
 
@@ -26,12 +19,18 @@ export default function EventGalleryClient({
   slug,
   isHost,
   isLoggedIn,
+  debugUserId,
+  debugEventOwnerId,
+  debugIsHost,
 }: {
   event: any;
   photos: any[];
   slug: string;
   isHost: boolean;
   isLoggedIn: boolean;
+  debugUserId: string;
+  debugEventOwnerId: string;
+  debugIsHost: boolean;
 }) {
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -119,26 +118,32 @@ export default function EventGalleryClient({
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-600">
+      {/* 🔍 DEBUG BANNER - Remove this later once fixed */}
+      <div className="bg-yellow-100 border-b-2 border-yellow-400 p-4 text-sm">
+        <p className="font-bold text-yellow-900 mb-1">🔍 DEBUG INFO:</p>
+        <p className="text-yellow-800">
+          <strong>Your User ID:</strong> {debugUserId}
+        </p>
+        <p className="text-yellow-800">
+          <strong>Event Owner ID:</strong> {debugEventOwnerId}
+        </p>
+        <p className="text-yellow-800">
+          <strong>Is Host?</strong> {debugIsHost ? "✅ YES" : "❌ NO"}
+        </p>
+        <p className="text-yellow-800">
+          <strong>Logged In?</strong> {isLoggedIn ? "✅ YES" : "❌ NO"}
+        </p>
+      </div>
+
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* HOST: Back to Home link */}
-          {isHost ? (
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to Home
-            </Link>
-          ) : (
-            /* GUEST: Back to Home link (not close) */
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to Home
-            </Link>
-          )}
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Home
+          </Link>
 
           {/* ONLY HOST: Download Button */}
           {isHost && (
@@ -167,16 +172,6 @@ export default function EventGalleryClient({
               ? "Manage, delete, and download photos for this event."
               : "View photos shared by guests."}
           </p>
-
-          {/* If logged in but not the host, show a message */}
-          {isLoggedIn && !isHost && (
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-sm">
-                You are logged in, but you are not the owner of this event. Only
-                the event creator can see the QR code and management tools.
-              </p>
-            </div>
-          )}
         </div>
 
         {/* ONLY HOST: QR Code Section */}
@@ -212,7 +207,6 @@ export default function EventGalleryClient({
                 ? "Share the QR code to get started!"
                 : "Be the first to upload a photo!"}
             </p>
-            {/* GUEST: Add upload button for guests */}
             {!isHost && (
               <Link
                 href={`/events/${slug}/upload`}
@@ -239,7 +233,6 @@ export default function EventGalleryClient({
 
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
-                  {/* ONLY HOST: Delete Button */}
                   {isHost && (
                     <div className="flex justify-end">
                       <button
@@ -251,8 +244,6 @@ export default function EventGalleryClient({
                       </button>
                     </div>
                   )}
-
-                  {/* ALWAYS VISIBLE: Guest Name and Date */}
                   <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 w-full">
                     <p className="text-white text-xs font-medium">
                       {photo.guest_name || "Anonymous Guest"}

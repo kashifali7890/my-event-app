@@ -54,6 +54,9 @@ export default async function EventGalleryPage({
       slug={slug}
       isHost={isHost}
       isLoggedIn={isLoggedIn}
+      debugUserId={user?.id || "NOT LOGGED IN"}
+      debugEventOwnerId={event.user_id}
+      debugIsHost={isHost}
     />
   );
 }
