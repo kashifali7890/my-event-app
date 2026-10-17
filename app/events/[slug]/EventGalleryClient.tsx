@@ -17,7 +17,7 @@ export default function EventGalleryClient({
   event,
   photos,
   slug,
-  isHost, // We use this to check if the viewer is the host
+  isHost, // This tells us if the viewer is the host
 }: {
   event: any;
   photos: any[];
@@ -124,7 +124,7 @@ export default function EventGalleryClient({
             <ArrowLeft className="w-5 h-5" /> Back to Home
           </Link>
 
-          {/*  CHANGE 1: Only show Download button if isHost is true */}
+          {/* ONLY show Download button if isHost is true */}
           {isHost && (
             <button
               onClick={handleDownloadZip}
@@ -147,11 +147,13 @@ export default function EventGalleryClient({
             {event.title || "Event Gallery"}
           </h1>
           <p className="text-gray-500 mt-1">
-            Manage, delete, and download photos for this event.
+            {isHost
+              ? "Manage, delete, and download photos for this event."
+              : "View photos shared by guests."}
           </p>
         </div>
 
-        {/*  CHANGE 2: Only show QR Code section if isHost is true */}
+        {/* ONLY show QR Code section if isHost is true */}
         {isHost && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
             <div className="bg-white p-2 border-2 border-dashed border-blue-200 rounded-xl">
@@ -180,7 +182,9 @@ export default function EventGalleryClient({
               No photos yet
             </h2>
             <p className="text-gray-500">
-              Photos will appear here in real-time as guests upload them.
+              {isHost
+                ? "Share the QR code to get started!"
+                : "Be the first to upload a photo!"}
             </p>
           </div>
         ) : (
@@ -198,11 +202,11 @@ export default function EventGalleryClient({
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
 
-                {/* Hover Overlay with Delete Action */}
+                {/* Hover Overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
-                  <div className="flex justify-end">
-                    {/*  CHANGE 3: Only show Delete button if isHost is true */}
-                    {isHost && (
+                  {/* Top Right: Delete Button (ONLY FOR HOST) */}
+                  {isHost && (
+                    <div className="flex justify-end">
                       <button
                         onClick={() => handleDelete(photo.id)}
                         className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
@@ -210,9 +214,11 @@ export default function EventGalleryClient({
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    )}
-                  </div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
+                    </div>
+                  )}
+
+                  {/* Bottom: Guest Name and Date (ALWAYS VISIBLE FOR EVERYONE) */}
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 w-full">
                     <p className="text-white text-xs font-medium">
                       {photo.guest_name || "Anonymous Guest"}
                     </p>
