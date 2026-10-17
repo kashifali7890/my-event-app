@@ -17,10 +17,12 @@ export default function EventGalleryClient({
   event,
   photos,
   slug,
+  isHost,
 }: {
   event: any;
   photos: any[];
   slug: string;
+  isHost: boolean;
 }) {
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -116,23 +118,31 @@ export default function EventGalleryClient({
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-          >
-            <ArrowLeft className="w-5 h-5" /> Back to Home
-          </Link>
+          {/* Only show Back to Home if it's the HOST. Guests shouldn't go to the dashboard. */}
+          {isHost ? (
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
+            >
+              <ArrowLeft className="w-5 h-5" /> Back to Home
+            </Link>
+          ) : (
+            <div className="text-sm font-medium text-gray-500">Guest View</div>
+          )}
 
-          <button
-            onClick={handleDownloadZip}
-            disabled={isDownloading || galleryPhotos.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-sm"
-          >
-            <Download className="w-4 h-4" />
-            {isDownloading
-              ? "Zipping..."
-              : `Download All (${galleryPhotos.length})`}
-          </button>
+          {/* Only show Download button if it's the HOST */}
+          {isHost && (
+            <button
+              onClick={handleDownloadZip}
+              disabled={isDownloading || galleryPhotos.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              {isDownloading
+                ? "Zipping..."
+                : `Download All (${galleryPhotos.length})`}
+            </button>
+          )}
         </div>
       </div>
 
@@ -143,27 +153,32 @@ export default function EventGalleryClient({
             {event.title || "Event Gallery"}
           </h1>
           <p className="text-gray-500 mt-1">
-            Manage, delete, and download photos for this event.
+            {isHost
+              ? "Manage, delete, and download photos for this event."
+              : "View photos shared by guests."}
           </p>
         </div>
 
-        {/* QR Code Section */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
-          <div className="bg-white p-2 border-2 border-dashed border-blue-200 rounded-xl">
-            <QRCodeSVG value={uploadUrl} size={120} />
+        {/* QR Code Section - ONLY FOR HOST */}
+        {isHost && (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
+            <div className="bg-white p-2 border-2 border-dashed border-blue-200 rounded-xl">
+              <QRCodeSVG value={uploadUrl} size={120} />
+            </div>
+            <div className="text-center md:text-left">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 justify-center md:justify-start">
+                <QrCode className="w-5 h-5 text-blue-600" /> Scan to Upload
+                Photos
+              </h2>
+              <p className="text-gray-500 mt-1">
+                Guests can scan this code to instantly open the upload page.
+              </p>
+              <p className="text-xs text-gray-400 mt-2 font-mono bg-gray-50 p-2 rounded break-all">
+                {uploadUrl}
+              </p>
+            </div>
           </div>
-          <div className="text-center md:text-left">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2 justify-center md:justify-start">
-              <QrCode className="w-5 h-5 text-blue-600" /> Scan to Upload Photos
-            </h2>
-            <p className="text-gray-500 mt-1">
-              Guests can scan this code to instantly open the upload page.
-            </p>
-            <p className="text-xs text-gray-400 mt-2 font-mono bg-gray-50 p-2 rounded break-all">
-              {uploadUrl}
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Photo Grid */}
         {galleryPhotos.length === 0 ? (
@@ -173,7 +188,9 @@ export default function EventGalleryClient({
               No photos yet
             </h2>
             <p className="text-gray-500">
-              Photos will appear here in real-time as guests upload them.
+              {isHost
+                ? "Share the QR code to get started!"
+                : "Be the first to upload a photo!"}
             </p>
           </div>
         ) : (
@@ -191,26 +208,37 @@ export default function EventGalleryClient({
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
 
-                {/* Hover Overlay with Delete Action */}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => handleDelete(photo.id)}
-                      className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
-                      title="Delete photo"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {/* Hover Overlay - Only show Delete button if HOST */}
+                {isHost && (
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleDelete(photo.id)}
+                        className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
+                        title="Delete photo"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
+                      <p className="text-white text-xs font-medium">
+                        {photo.guest_name || "Anonymous Guest"}
+                      </p>
+                      <p className="text-gray-300 text-[10px]">
+                        {new Date(photo.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
-                    <p className="text-white text-xs font-medium">
+                )}
+
+                {/* If Guest, just show the name at the bottom always */}
+                {!isHost && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-2">
+                    <p className="text-white text-xs font-medium text-center">
                       {photo.guest_name || "Anonymous Guest"}
                     </p>
-                    <p className="text-gray-300 text-[10px]">
-                      {new Date(photo.created_at).toLocaleDateString()}
-                    </p>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
