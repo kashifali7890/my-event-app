@@ -17,7 +17,7 @@ export default function EventGalleryClient({
   event,
   photos,
   slug,
-  isHost,
+  isHost, // We use this to check if the viewer is the host
 }: {
   event: any;
   photos: any[];
@@ -28,7 +28,6 @@ export default function EventGalleryClient({
   const [isDownloading, setIsDownloading] = useState(false);
   const supabase = createClient();
 
-  // Use production URL if available, otherwise fallback to local
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
 
@@ -118,19 +117,14 @@ export default function EventGalleryClient({
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Only show Back to Home if it's the HOST. Guests shouldn't go to the dashboard. */}
-          {isHost ? (
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to Home
-            </Link>
-          ) : (
-            <div className="text-sm font-medium text-gray-500">Guest View</div>
-          )}
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Home
+          </Link>
 
-          {/* Only show Download button if it's the HOST */}
+          {/*  CHANGE 1: Only show Download button if isHost is true */}
           {isHost && (
             <button
               onClick={handleDownloadZip}
@@ -153,13 +147,11 @@ export default function EventGalleryClient({
             {event.title || "Event Gallery"}
           </h1>
           <p className="text-gray-500 mt-1">
-            {isHost
-              ? "Manage, delete, and download photos for this event."
-              : "View photos shared by guests."}
+            Manage, delete, and download photos for this event.
           </p>
         </div>
 
-        {/* QR Code Section - ONLY FOR HOST */}
+        {/*  CHANGE 2: Only show QR Code section if isHost is true */}
         {isHost && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
             <div className="bg-white p-2 border-2 border-dashed border-blue-200 rounded-xl">
@@ -188,9 +180,7 @@ export default function EventGalleryClient({
               No photos yet
             </h2>
             <p className="text-gray-500">
-              {isHost
-                ? "Share the QR code to get started!"
-                : "Be the first to upload a photo!"}
+              Photos will appear here in real-time as guests upload them.
             </p>
           </div>
         ) : (
@@ -208,10 +198,11 @@ export default function EventGalleryClient({
                   sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
 
-                {/* Hover Overlay - Only show Delete button if HOST */}
-                {isHost && (
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
-                    <div className="flex justify-end">
+                {/* Hover Overlay with Delete Action */}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
+                  <div className="flex justify-end">
+                    {/*  CHANGE 3: Only show Delete button if isHost is true */}
+                    {isHost && (
                       <button
                         onClick={() => handleDelete(photo.id)}
                         className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition shadow-lg"
@@ -219,26 +210,17 @@ export default function EventGalleryClient({
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
-                    </div>
-                    <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
-                      <p className="text-white text-xs font-medium">
-                        {photo.guest_name || "Anonymous Guest"}
-                      </p>
-                      <p className="text-gray-300 text-[10px]">
-                        {new Date(photo.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
+                    )}
                   </div>
-                )}
-
-                {/* If Guest, just show the name at the bottom always */}
-                {!isHost && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm p-2">
-                    <p className="text-white text-xs font-medium text-center">
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2">
+                    <p className="text-white text-xs font-medium">
                       {photo.guest_name || "Anonymous Guest"}
                     </p>
+                    <p className="text-gray-300 text-[10px]">
+                      {new Date(photo.created_at).toLocaleDateString()}
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
