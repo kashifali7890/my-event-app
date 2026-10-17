@@ -17,7 +17,7 @@ export default function EventGalleryClient({
   event,
   photos,
   slug,
-  isHost, // This tells us if the viewer is the host
+  isHost,
 }: {
   event: any;
   photos: any[];
@@ -27,9 +27,6 @@ export default function EventGalleryClient({
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
   const supabase = createClient();
-
-  console.log("DEBUG: isHost =", isHost);
-  console.log("DEBUG: user ID =", user?.id); // Wait, we didn't pass user, we passed isHost. Let's check page.tsx
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
@@ -47,17 +44,16 @@ export default function EventGalleryClient({
           filter: `event_id=eq.${event.id}`,
         },
         (payload) => {
-          if (payload.eventType === "INSERT") {
+          if (payload.eventType === "INSERT")
             setGalleryPhotos((prev) => [payload.new, ...prev]);
-          } else if (payload.eventType === "DELETE") {
+          else if (payload.eventType === "DELETE")
             setGalleryPhotos((prev) =>
               prev.filter((p: any) => p.id !== payload.old.id),
             );
-          } else if (payload.eventType === "UPDATE") {
+          else if (payload.eventType === "UPDATE")
             setGalleryPhotos((prev) =>
               prev.map((p: any) => (p.id === payload.new.id ? payload.new : p)),
             );
-          }
         },
       )
       .subscribe();
@@ -70,9 +66,7 @@ export default function EventGalleryClient({
   // 2. DELETE HANDLER
   const handleDelete = async (photoId: string) => {
     if (!confirm("Are you sure you want to delete this photo?")) return;
-
     setGalleryPhotos((prev) => prev.filter((p: any) => p.id !== photoId));
-
     try {
       const { error } = await supabase
         .from("photos")
@@ -99,7 +93,6 @@ export default function EventGalleryClient({
         const blob = await response.blob();
         imgFolder?.file(`photo-${i + 1}.jpg`, blob);
       }
-
       const content = await zip.generateAsync({ type: "blob" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(content);
@@ -127,7 +120,7 @@ export default function EventGalleryClient({
             <ArrowLeft className="w-5 h-5" /> Back to Home
           </Link>
 
-          {/* ONLY show Download button if isHost is true */}
+          {/* ONLY HOST: Download Button */}
           {isHost && (
             <button
               onClick={handleDownloadZip}
@@ -156,7 +149,7 @@ export default function EventGalleryClient({
           </p>
         </div>
 
-        {/* ONLY show QR Code section if isHost is true */}
+        {/* ONLY HOST: QR Code Section */}
         {isHost && (
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center gap-6">
             <div className="bg-white p-2 border-2 border-dashed border-blue-200 rounded-xl">
@@ -207,7 +200,7 @@ export default function EventGalleryClient({
 
                 {/* Hover Overlay */}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex flex-col justify-between p-3">
-                  {/* Top Right: Delete Button (ONLY FOR HOST) */}
+                  {/* ONLY HOST: Delete Button */}
                   {isHost && (
                     <div className="flex justify-end">
                       <button
@@ -220,7 +213,7 @@ export default function EventGalleryClient({
                     </div>
                   )}
 
-                  {/* Bottom: Guest Name and Date (ALWAYS VISIBLE FOR EVERYONE) */}
+                  {/* ALWAYS VISIBLE: Guest Name and Date */}
                   <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 w-full">
                     <p className="text-white text-xs font-medium">
                       {photo.guest_name || "Anonymous Guest"}

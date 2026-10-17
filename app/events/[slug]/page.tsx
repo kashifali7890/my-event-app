@@ -9,7 +9,7 @@ export default async function EventGalleryPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Get the current user (if logged in)
+  // 1. Get the current logged-in user
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,12 +42,8 @@ export default async function EventGalleryPage({
     .eq("event_id", event.id)
     .order("created_at", { ascending: false });
 
-  // 5. Check if the current user is the owner of this event
+  // 5. Check if the logged-in user is the owner of this event
   const isHost = user?.id === event.user_id;
-
-  console.log("DEBUG: Logged in User ID:", user?.id);
-  console.log("DEBUG: Event Owner ID:", event.user_id);
-  console.log("DEBUG: Is Host?", isHost);
 
   // 6. Pass everything to the client component
   return (
