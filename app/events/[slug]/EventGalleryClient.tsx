@@ -17,27 +17,37 @@ export default function EventGalleryClient({
   event,
   photos,
   slug,
-  isHost,
-  isLoggedIn,
-  debugUserId,
-  debugEventOwnerId,
-  debugIsHost,
 }: {
   event: any;
   photos: any[];
   slug: string;
-  isHost: boolean;
-  isLoggedIn: boolean;
-  debugUserId: string;
-  debugEventOwnerId: string;
-  debugIsHost: boolean;
 }) {
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
-  const supabase = createClient();
 
+  // 🌟 NEW: State to track if user is host
+  const [isHost, setIsHost] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
+  const supabase = createClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
+
+  // 🌟 NEW: Check auth on the client side (Browser)
+  useEffect(() => {
+    const checkAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && user.id === event.user_id) {
+        setIsHost(true); // You are the owner!
+      } else {
+        setIsHost(false); // You are a guest
+      }
+      setIsLoadingAuth(false);
+    };
+    checkAuth();
+  }, [event.user_id, supabase]);
 
   // 1. REAL-TIME SUBSCRIPTION
   useEffect(() => {
@@ -116,25 +126,17 @@ export default function EventGalleryClient({
     }
   };
 
+  // Show a small loader while checking if you are the host
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-600">
-      {/* 🔍 DEBUG BANNER - Remove this later once fixed */}
-      <div className="bg-yellow-100 border-b-2 border-yellow-400 p-4 text-sm">
-        <p className="font-bold text-yellow-900 mb-1">🔍 DEBUG INFO:</p>
-        <p className="text-yellow-800">
-          <strong>Your User ID:</strong> {debugUserId}
-        </p>
-        <p className="text-yellow-800">
-          <strong>Event Owner ID:</strong> {debugEventOwnerId}
-        </p>
-        <p className="text-yellow-800">
-          <strong>Is Host?</strong> {debugIsHost ? "✅ YES" : "❌ NO"}
-        </p>
-        <p className="text-yellow-800">
-          <strong>Logged In?</strong> {isLoggedIn ? "✅ YES" : "❌ NO"}
-        </p>
-      </div>
-
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
