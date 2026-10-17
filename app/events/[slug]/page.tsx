@@ -9,17 +9,19 @@ export default async function EventGalleryPage({
   const { slug } = await params;
   const supabase = await createClient();
 
-  // 1. Get the current logged-in user (if any)
+  // 1. Get the current user (if logged in)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // 2. Fetch the event
   const { data: event, error: eventError } = await supabase
     .from("events")
     .select("*")
     .eq("slug", slug)
     .single();
 
+  // 3. Handle Event Not Found
   if (eventError || !event) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
@@ -33,21 +35,23 @@ export default async function EventGalleryPage({
     );
   }
 
+  // 4. Fetch photos for this event
   const { data: photos } = await supabase
     .from("photos")
     .select("id, image_url, guest_name, created_at, event_id")
     .eq("event_id", event.id)
     .order("created_at", { ascending: false });
 
-  // 2. Check if the current user is the owner of this event
+  // 5. Check if the current user is the owner of this event
   const isHost = user?.id === event.user_id;
 
+  // 6. Pass everything to the client component
   return (
     <EventGalleryClient
       event={event}
       photos={photos || []}
       slug={slug}
-      isHost={isHost} // Pass this to the client
+      isHost={isHost}
     />
   );
 }
