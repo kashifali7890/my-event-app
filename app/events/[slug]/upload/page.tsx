@@ -10,6 +10,7 @@ import {
   CheckCircle,
   ArrowLeft,
   Loader2,
+  LogOut,
 } from "lucide-react";
 
 declare global {
@@ -147,22 +148,46 @@ export default function GuestUploadPage() {
     );
   }
 
+  // 🌟 NEW: Enhanced Success Screen with better UX options
   if (success) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-green-50 text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Photos Uploaded!
+          CODE IS WORKING! Photos Uploaded!
         </h1>
-        <p className="text-gray-600 mb-6">
-          Thank you for sharing your memories at {eventTitle}.
+        <p className="text-gray-600 mb-8 max-w-md">
+          Thank you for sharing your memories at{" "}
+          <span className="font-semibold text-gray-900">{eventTitle}</span>.
         </p>
-        <Link
-          href={`/events/${slug}`}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md mb-6">
+          <Link
+            href={`/events/${slug}/upload`}
+            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center gap-2 shadow-sm"
+          >
+            <Upload className="w-4 h-4" />
+            Upload More
+          </Link>
+          <Link
+            href={`/events/${slug}`}
+            className="flex-1 bg-white text-gray-700 border border-gray-300 px-6 py-3 rounded-lg hover:bg-gray-50 transition font-medium flex items-center justify-center gap-2 shadow-sm"
+          >
+            <ImageIcon className="w-4 h-4" />
+            View Gallery
+          </Link>
+        </div>
+
+        <button
+          onClick={async () => {
+            await supabase.auth.signOut();
+            window.location.href = "/";
+          }}
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition"
         >
-          View Gallery
-        </Link>
+          <LogOut className="w-4 h-4" />
+          Log Out & Go Home
+        </button>
       </div>
     );
   }

@@ -25,7 +25,10 @@ export default function EventGalleryClient({
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
 
-  // 🌟 NEW: State to track if user is host
+  // 🌟 Track if the gallery has been purchased
+  const [hasPurchased, setHasPurchased] = useState(false);
+
+  // 🌟 Track if the current user is the host
   const [isHost, setIsHost] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -33,23 +36,61 @@ export default function EventGalleryClient({
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
   const uploadUrl = `${appUrl}/events/${slug}/upload`;
 
-  // 🌟 NEW: Check auth on the client side (Browser)
+  // 1. Check if user is the host
   useEffect(() => {
     const checkAuth = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (user && user.id === event.user_id) {
-        setIsHost(true); // You are the owner!
+        setIsHost(true);
       } else {
-        setIsHost(false); // You are a guest
+        setIsHost(false);
       }
       setIsLoadingAuth(false);
     };
     checkAuth();
   }, [event.user_id, supabase]);
 
-  // 1. REAL-TIME SUBSCRIPTION
+  // 2. Check if the gallery has been purchased (For Host or Guests)
+  // 2. Check if the gallery has been purchased (For Host or Guests)
+  useEffect(() => {
+    const checkPurchase = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      console.log("🔍 Current user:", user?.id); // ADD THIS
+      console.log("📅 Event ID:", event.id); // ADD THIS
+
+      if (!user) {
+        setHasPurchased(false);
+        return;
+      }
+
+      // FIX: Use .limit(1) instead of .single() to avoid 406 errors
+      const { data } = await supabase
+        .from("purchases")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("event_id", event.id)
+        .eq("status", "completed")
+        .limit(1);
+
+      // FIX: Check if array has items
+      if (data && data.length > 0) {
+        setHasPurchased(true);
+      } else {
+        setHasPurchased(false);
+      }
+    };
+
+    if (!isLoadingAuth) {
+      checkPurchase();
+    }
+  }, [isLoadingAuth, event.id, supabase]);
+
+  // 3. REAL-TIME SUBSCRIPTION
   useEffect(() => {
     const channel = supabase
       .channel(`event-gallery-${event.id}`)
@@ -81,7 +122,7 @@ export default function EventGalleryClient({
     };
   }, [event.id, supabase]);
 
-  // 2. DELETE HANDLER
+  // 4. DELETE HANDLER
   const handleDelete = async (photoId: string) => {
     if (!confirm("Are you sure you want to delete this photo?")) return;
     setGalleryPhotos((prev) => prev.filter((p: any) => p.id !== photoId));
@@ -97,7 +138,7 @@ export default function EventGalleryClient({
     }
   };
 
-  // 3. DOWNLOAD ALL AS ZIP HANDLER
+  // 5. DOWNLOAD ALL AS ZIP HANDLER
   const handleDownloadZip = async () => {
     if (galleryPhotos.length === 0) return;
     setIsDownloading(true);
@@ -126,7 +167,31 @@ export default function EventGalleryClient({
     }
   };
 
-  // Show a small loader while checking if you are the host
+  // 6. STRIPE CHECKOUT HANDLER
+  // 🌟 STRIPE CHECKOUT HANDLER
+  const handleCheckout = async () => {
+    try {
+      const response = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // FIX: Send the slug along with the event_id
+        body: JSON.stringify({ event_id: event.id, slug: slug }),
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Error starting checkout. Please try again.");
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("An error occurred. Please try again.");
+    }
+  };
+
+  // Show a small loader while checking auth
   if (isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -147,11 +212,11 @@ export default function EventGalleryClient({
             <ArrowLeft className="w-5 h-5" /> Back to Home
           </Link>
 
-          {/* ONLY HOST: Download Button */}
-          {isHost && (
+          {/* 🌟 DOWNLOAD BUTTON: Only show for Host IF they have purchased */}
+          {isHost && hasPurchased && galleryPhotos.length > 0 && (
             <button
               onClick={handleDownloadZip}
-              disabled={isDownloading || galleryPhotos.length === 0}
+              disabled={isDownloading}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-sm"
             >
               <Download className="w-4 h-4" />
@@ -175,6 +240,31 @@ export default function EventGalleryClient({
               : "View photos shared by guests."}
           </p>
         </div>
+
+        {/* 🌟 PAYWALL BANNER: ONLY for Host, ONLY if NOT purchased, ONLY if photos exist */}
+        {isHost && !hasPurchased && galleryPhotos.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8 text-center">
+            <h3 className="text-xl font-bold text-blue-900 mb-2">
+              Unlock High-Res Photos
+            </h3>
+            <p className="text-blue-700 mb-4">
+              Get access to download all high-resolution photos from this event.
+            </p>
+            <button
+              onClick={handleCheckout}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-200 shadow-md cursor-pointer "
+            >
+              Unlock Gallery for A$4.99
+            </button>
+          </div>
+        )}
+
+        {/* 🌟 SUCCESS BANNER: ONLY for Host, ONLY IF purchased */}
+        {isHost && hasPurchased && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-center text-green-800 font-medium">
+            ✅ Gallery Unlocked! You can now download high-resolution photos.
+          </div>
+        )}
 
         {/* ONLY HOST: QR Code Section */}
         {isHost && (
@@ -246,7 +336,22 @@ export default function EventGalleryClient({
                       </button>
                     </div>
                   )}
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 w-full">
+
+                  {/* 🌟 INDIVIDUAL DOWNLOAD: Only for Host IF purchased */}
+                  {isHost && hasPurchased && (
+                    <div className="mt-auto">
+                      <a
+                        href={`/api/photos/download?event_id=${event.id}&photo_id=${photo.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full bg-white text-gray-900 font-semibold py-2 px-3 rounded-lg hover:bg-gray-100 transition text-sm"
+                      >
+                        <Download className="w-4 h-4" /> Download High-Res
+                      </a>
+                    </div>
+                  )}
+
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg p-2 w-full mt-2">
                     <p className="text-white text-xs font-medium">
                       {photo.guest_name || "Anonymous Guest"}
                     </p>
