@@ -33,10 +33,15 @@ export default function GuestUpload() {
   };
 
   const handleViewGallery = () => {
-    // CRITICAL FIX: Go back ONE level to the parent route
-    // From: /events/[slug]/upload
-    // To:   /events/[slug]
-    router.back();
+    // Get the current URL (e.g., /events/my-event/upload)
+    const currentPath = window.location.pathname;
+
+    // Split it to get the event name (e.g., "my-event")
+    const parts = currentPath.split("/");
+    const slug = parts[2];
+
+    // Navigate directly to the gallery
+    router.push(`/events/${slug}`);
   };
 
   return (
