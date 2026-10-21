@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // 🌟 ADDED: Next.js router for redirection
 import { createClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,10 +22,13 @@ export default function EventGalleryClient({
   photos: any[];
   slug: string;
 }) {
-  const router = useRouter(); // 🌟 ADDED: Initialize router
   const [galleryPhotos, setGalleryPhotos] = useState(photos);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // 🌟 Track if the gallery has been purchased
   const [hasPurchased, setHasPurchased] = useState(false);
+
+  // 🌟 Track if the current user is the host
   const [isHost, setIsHost] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
@@ -50,13 +52,12 @@ export default function EventGalleryClient({
     checkAuth();
   }, [event.user_id, supabase]);
 
-  // 2. Check if the gallery has been purchased
+  // 2. Check if the gallery has been purchased (For Host or Guests)
   useEffect(() => {
     const checkPurchase = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-
       if (!user) {
         setHasPurchased(false);
         return;
@@ -68,9 +69,9 @@ export default function EventGalleryClient({
         .eq("user_id", user.id)
         .eq("event_id", event.id)
         .eq("status", "completed")
-        .limit(1);
+        .single();
 
-      if (data && data.length > 0) {
+      if (data) {
         setHasPurchased(true);
       } else {
         setHasPurchased(false);
@@ -160,12 +161,14 @@ export default function EventGalleryClient({
   };
 
   // 6. STRIPE CHECKOUT HANDLER
+    // 🌟 STRIPE CHECKOUT HANDLER
   const handleCheckout = async () => {
     try {
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_id: event.id, slug: slug }),
+        // FIX: Send the slug along with the event_id
+        body: JSON.stringify({ event_id: event.id, slug: slug }), 
       });
 
       const data = await response.json();
@@ -179,20 +182,6 @@ export default function EventGalleryClient({
       console.error("Checkout error:", error);
       alert("An error occurred. Please try again.");
     }
-  };
-
-  // 🌟 NEW: Handle Guest Logout and Redirect
-  const handleGoBackHome = async () => {
-    // 1. Clear any local guest session markers
-    localStorage.removeItem("guestToken");
-    sessionStorage.removeItem("isGuest");
-    sessionStorage.removeItem("currentEventId");
-
-    // 2. Sign out from Supabase to ensure a completely clean slate
-    await supabase.auth.signOut();
-
-    // 3. Redirect to the public Thank You page
-    router.push("/thank-you");
   };
 
   // Show a small loader while checking auth
@@ -209,24 +198,14 @@ export default function EventGalleryClient({
       {/* Top Navigation Bar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* 🌟 UPDATED: Conditional Back Button */}
-          {!isHost ? (
-            <button
-              onClick={handleGoBackHome}
-              className="flex items-center gap-2 text-gray-700 hover:text-red-600 font-medium transition"
-            >
-              <ArrowLeft className="w-5 h-5" /> Leave Event & Go Home
-            </button>
-          ) : (
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
-            >
-              <ArrowLeft className="w-5 h-5" /> Back to Dashboard
-            </Link>
-          )}
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium transition"
+          >
+            <ArrowLeft className="w-5 h-5" /> Back to Home
+          </Link>
 
-          {/* DOWNLOAD BUTTON: Only show for Host IF they have purchased */}
+          {/* 🌟 DOWNLOAD BUTTON: Only show for Host IF they have purchased */}
           {isHost && hasPurchased && galleryPhotos.length > 0 && (
             <button
               onClick={handleDownloadZip}
@@ -255,7 +234,7 @@ export default function EventGalleryClient({
           </p>
         </div>
 
-        {/* PAYWALL BANNER: ONLY for Host, ONLY if NOT purchased, ONLY if photos exist */}
+        {/* 🌟 PAYWALL BANNER: ONLY for Host, ONLY if NOT purchased, ONLY if photos exist */}
         {isHost && !hasPurchased && galleryPhotos.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8 text-center">
             <h3 className="text-xl font-bold text-blue-900 mb-2">
@@ -273,7 +252,7 @@ export default function EventGalleryClient({
           </div>
         )}
 
-        {/* SUCCESS BANNER: ONLY for Host, ONLY IF purchased */}
+        {/* 🌟 SUCCESS BANNER: ONLY for Host, ONLY IF purchased */}
         {isHost && hasPurchased && (
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-8 text-center text-green-800 font-medium">
             ✅ Gallery Unlocked! You can now download high-resolution photos.
@@ -351,7 +330,7 @@ export default function EventGalleryClient({
                     </div>
                   )}
 
-                  {/* INDIVIDUAL DOWNLOAD: Only for Host IF purchased */}
+                  {/* 🌟 INDIVIDUAL DOWNLOAD: Only for Host IF purchased */}
                   {isHost && hasPurchased && (
                     <div className="mt-auto">
                       <a
